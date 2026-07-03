@@ -133,55 +133,192 @@ export const userTemplates: Record<string, UserProfile> = {
 export function parseResumeText(text: string): UserProfile {
   const normalizedText = text.toLowerCase();
   
-  // Try to find Name (normally at the start of text)
+  // Section Splitting Heuristics
+  const sections: Record<string, string[]> = {
+    education: [],
+    experience: [],
+    projects: [],
+    skills: [],
+    certifications: [],
+    achievements: []
+  };
+
+  let currentSection = '';
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-  const name = lines[0] || 'Unknown Candidate';
-  
-  // Find email and phone
+
+  lines.forEach(line => {
+    const lowerLine = line.toLowerCase();
+    if (lowerLine.includes('education') || lowerLine.includes('academic background')) {
+      currentSection = 'education';
+    } else if (lowerLine.includes('experience') || lowerLine.includes('employment') || lowerLine.includes('work history') || lowerLine.includes('professional history')) {
+      currentSection = 'experience';
+    } else if (lowerLine.includes('projects') || lowerLine.includes('personal projects') || lowerLine.includes('academic projects')) {
+      currentSection = 'projects';
+    } else if (lowerLine.includes('skills') || lowerLine.includes('technologies') || lowerLine.includes('technical stack')) {
+      currentSection = 'skills';
+    } else if (lowerLine.includes('certifications') || lowerLine.includes('credentials') || lowerLine.includes('certificates')) {
+      currentSection = 'certifications';
+    } else if (lowerLine.includes('achievements') || lowerLine.includes('awards') || lowerLine.includes('honors')) {
+      currentSection = 'achievements';
+    } else if (currentSection) {
+      sections[currentSection].push(line);
+    }
+  });
+
+  // 1. Name detection (looks for first line that is clean of emails, phone numbers, or typical headers)
+  let name = 'Unknown Candidate';
+  for (let i = 0; i < Math.min(5, lines.length); i++) {
+    const l = lines[i];
+    if (l && !l.includes('@') && !l.match(/\d{4}/) && !l.toLowerCase().includes('resume') && !l.toLowerCase().includes('curriculum')) {
+      name = l;
+      break;
+    }
+  }
+
+  // 2. Email and Phone
   const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
   const phoneRegex = /(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/;
-  
   const email = (text.match(emailRegex) || ['', 'candidate@example.com'])[0];
   const phone = (text.match(phoneRegex) || ['', '+1 (555) 000-0000'])[0];
-  
-  // Extract degree
+
+  // 3. Degree & Branch detection
   let degree = 'B.Tech';
   if (normalizedText.includes('b.e.') || normalizedText.includes('bachelor of engineering')) degree = 'B.E.';
-  else if (normalizedText.includes('m.s.') || normalizedText.includes('master of science')) degree = 'M.S.';
-  else if (normalizedText.includes('ph.d') || normalizedText.includes('phd')) degree = 'Ph.D';
+  else if (normalizedText.includes('m.s.') || normalizedText.includes('master of science') || normalizedText.includes('ms')) degree = 'M.S.';
+  else if (normalizedText.includes('m.tech') || normalizedText.includes('master of technology')) degree = 'M.Tech';
+  else if (normalizedText.includes('ph.d') || normalizedText.includes('phd') || normalizedText.includes('doctor of philosophy')) degree = 'Ph.D';
   else if (normalizedText.includes('bs') || normalizedText.includes('b.s.')) degree = 'B.S.';
-  
-  // Extract branch
+  else if (normalizedText.includes('bca')) degree = 'BCA';
+  else if (normalizedText.includes('mca')) degree = 'MCA';
+
   let branch = 'Computer Science';
   if (normalizedText.includes('electrical')) branch = 'Electrical Engineering';
   else if (normalizedText.includes('mechanical')) branch = 'Mechanical Engineering';
-  else if (normalizedText.includes('information technology')) branch = 'Information Technology';
-  else if (normalizedText.includes('electronics')) branch = 'Electronics & Communication';
-  
-  // Extract Graduation Year
+  else if (normalizedText.includes('information technology') || normalizedText.includes('it')) branch = 'Information Technology';
+  else if (normalizedText.includes('electronics') || normalizedText.includes('ece')) branch = 'Electronics & Communication';
+  else if (normalizedText.includes('instrumentation')) branch = 'Instrumentation';
+  else if (normalizedText.includes('data science')) branch = 'Data Science';
+  else if (normalizedText.includes('mathematics')) branch = 'Mathematics';
+
+  // 4. Graduation Year
   const yearMatch = text.match(/\b(202\d|2030)\b/);
   const graduationYear = yearMatch ? parseInt(yearMatch[0]) : 2026;
-  
-  // Extract CGPA
-  const cgpaMatch = text.match(/cgpa[:\s]+(\d+(\.\d+)?)/i) || text.match(/gpa[:\s]+(\d+(\.\d+)?)/i);
-  const cgpa = cgpaMatch ? `${cgpaMatch[1]}/10` : '8.5/10';
-  
-  // Skill Lists for extraction
+
+  // 5. CGPA / GPA
+  const cgpaRegex = /(?:cgpa|gpa|score|grade)[:\s]*(\d+(?:\.\d+)?)(?:\s*\/?\s*(?:10|4))?/i;
+  const cgpaMatch = text.match(cgpaRegex);
+  let cgpa = '8.5/10';
+  if (cgpaMatch) {
+    const rawVal = parseFloat(cgpaMatch[1]);
+    cgpa = rawVal <= 4.0 ? `${rawVal}/4.0` : `${rawVal}/10`;
+  }
+
+  // 6. Skills extraction from pool
   const skillPool = [
     'React', 'TypeScript', 'JavaScript', 'HTML', 'CSS', 'Algorithms', 'Data Structures', 'Git', 'SQL',
     'Ruby', 'Python', 'Go', 'PLC Programming', 'AutoCAD', 'SCADA', 'Power Electronics', 'C++', 'Control Systems',
     'WebAssembly', 'Canvas API', 'Webpack', 'CSS Modules', 'Java', 'Spring Boot', 'AWS', 'Microservices',
-    'Distributed Systems', 'NoSQL', 'System Design', 'Terraform', 'Docker', 'Kubernetes', 'Linux', 'Three.js'
+    'Distributed Systems', 'NoSQL', 'System Design', 'Terraform', 'Docker', 'Kubernetes', 'Linux', 'Three.js',
+    'C', 'C#', 'Rust', 'MATLAB', 'Arduino', 'LabVIEW', 'GraphQL', 'Kafka', 'CI/CD'
   ];
-  
+
   const skills: string[] = [];
   skillPool.forEach(skill => {
     if (normalizedText.includes(skill.toLowerCase())) {
       skills.push(skill);
     }
   });
-  
-  // Default values for structural elements if not detected
+
+  // Extract custom skills listed under the skills section
+  if (sections.skills.length > 0) {
+    sections.skills.forEach(line => {
+      const parts = line.split(/[:,]/);
+      parts.forEach(p => {
+        const cleaned = p.trim().replace(/[•\-\*]/g, '');
+        if (cleaned && cleaned.length < 25 && !skills.includes(cleaned)) {
+          // If it matches common words, don't add it as a skill
+          if (!['skills', 'technical', 'languages', 'tools', 'frameworks'].includes(cleaned.toLowerCase())) {
+            skills.push(cleaned);
+          }
+        }
+      });
+    });
+  }
+
+  // 7. Projects extraction
+  const parsedProjects: Project[] = [];
+  if (sections.projects.length > 0) {
+    let currentProj: Project | null = null;
+    sections.projects.forEach(line => {
+      const cleanedLine = line.trim().replace(/^[•\-\*\s]+/, '');
+      if (!cleanedLine) return;
+
+      // If it looks like a project title (short line, capitalized, or starts with project names)
+      if (cleanedLine.length < 40 && (cleanedLine.match(/^[A-Z]/) || cleanedLine.toLowerCase().includes('project'))) {
+        if (currentProj) {
+          parsedProjects.push(currentProj);
+        }
+        currentProj = {
+          title: cleanedLine,
+          description: '',
+          skillsUsed: []
+        };
+      } else if (currentProj) {
+        currentProj.description += (currentProj.description ? ' ' : '') + cleanedLine;
+        // Check for skills used in project description
+        skillPool.forEach(s => {
+          if (cleanedLine.toLowerCase().includes(s.toLowerCase()) && !currentProj!.skillsUsed.includes(s)) {
+            currentProj!.skillsUsed.push(s);
+          }
+        });
+      }
+    });
+    if (currentProj) {
+      parsedProjects.push(currentProj);
+    }
+  }
+
+  // Fallback project if none parsed
+  if (parsedProjects.length === 0) {
+    parsedProjects.push({
+      title: 'Project Alpha',
+      description: 'Built a web system simulating multi-threaded execution environments and managing persistent caches.',
+      skillsUsed: skills.slice(0, 3)
+    });
+  }
+
+  // 8. Experience extraction
+  const parsedExp: WorkExperience[] = [];
+  if (sections.experience.length > 0) {
+    let currentExp: WorkExperience | null = null;
+    sections.experience.forEach(line => {
+      const cleanedLine = line.trim().replace(/^[•\-\*\s]+/, '');
+      if (!cleanedLine) return;
+
+      // If line is short and looks like a company name / job title
+      if (cleanedLine.length < 50 && (cleanedLine.toLowerCase().includes('engineer') || cleanedLine.toLowerCase().includes('developer') || cleanedLine.toLowerCase().includes('intern') || cleanedLine.toLowerCase().includes('analyst'))) {
+        if (currentExp) {
+          parsedExp.push(currentExp);
+        }
+        currentExp = {
+          company: 'Hiring Company',
+          role: cleanedLine,
+          duration: '6 Months',
+          description: ''
+        };
+      } else if (currentExp) {
+        currentExp.description += (currentExp.description ? ' ' : '') + cleanedLine;
+      }
+    });
+    if (currentExp) {
+      parsedExp.push(currentExp);
+    }
+  }
+
+  // 9. Certifications & Achievements
+  const certs = sections.certifications.length > 0 ? sections.certifications : ['Cloud Certified Foundations'];
+  const achs = sections.achievements.length > 0 ? sections.achievements : ['Outstanding Academic Achievement Award'];
+
   return {
     name,
     email,
@@ -191,22 +328,17 @@ export function parseResumeText(text: string): UserProfile {
     graduationYear,
     cgpa,
     skills: skills.length > 0 ? skills : ['React', 'JavaScript', 'CSS'],
-    programmingLanguages: skills.filter(s => ['JavaScript', 'TypeScript', 'Python', 'C++', 'Go', 'Ruby', 'Java'].includes(s)),
-    technicalTools: skills.filter(s => ['Git', 'Docker', 'Kubernetes', 'Terraform', 'AutoCAD', 'MATLAB'].includes(s)),
-    projects: [
-      {
-        title: 'Project Alpha',
-        description: 'Built a web system simulating multi-threaded execution environments and managing persistent caches.',
-        skillsUsed: skills.slice(0, 3)
-      }
-    ],
-    certifications: ['Cloud Certified Foundations'],
+    programmingLanguages: skills.filter(s => ['JavaScript', 'TypeScript', 'Python', 'C++', 'Go', 'Ruby', 'Java', 'Rust', 'C'].includes(s)),
+    technicalTools: skills.filter(s => ['Git', 'Docker', 'Kubernetes', 'Terraform', 'AutoCAD', 'MATLAB', 'Arduino'].includes(s)),
+    projects: parsedProjects,
+    certifications: certs,
     internships: [],
-    experience: [],
+    experience: parsedExp,
     languages: ['English'],
-    achievements: ['Outstanding Academic Achievement Award']
+    achievements: achs
   };
 }
+
 
 // Calculate the match criteria
 export function calculateMatch(profile: UserProfile, job: Job): MatchResult {

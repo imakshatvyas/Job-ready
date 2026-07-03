@@ -40,31 +40,41 @@ export const ResumeUpload: React.FC<ResumeUploadProps> = ({ userProfile, setUser
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
-      const mockParsedProfile: UserProfile = {
-        name: file.name.split('.')[0].replace(/[-_]/g, ' '),
-        email: 'uploaded.candidate@example.com',
-        phone: '+1 (555) 019-9988',
-        degree: 'B.Tech',
-        branch: 'Computer Science',
-        graduationYear: 2026,
-        cgpa: '8.5/10',
-        skills: ['React', 'JavaScript', 'TypeScript', 'Node.js', 'SQL', 'Git', 'CSS'],
-        programmingLanguages: ['TypeScript', 'JavaScript', 'Python'],
-        technicalTools: ['Git', 'VS Code', 'Docker'],
-        projects: [
-          {
-            title: 'Uploaded Source Project',
-            description: 'Analyzed dataset flows and created automated validation scripts to test microservice load distribution.',
-            skillsUsed: ['React', 'Node.js']
-          }
-        ],
-        certifications: ['AWS Cloud Practitioner'],
-        internships: [],
-        experience: [],
-        languages: ['English'],
-        achievements: ['Uploaded Resume parsed successfully']
-      };
-      simulateParsing(mockParsedProfile);
+      if (file.name.endsWith('.txt')) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const parsed = parseResumeText(event.target?.result as string);
+          simulateParsing(parsed);
+        };
+        reader.readAsText(file);
+      } else {
+        alert("Note: PDF/DOCX binary files cannot be processed fully in browser-only environments. For 100% accurate parsing, open your resume, copy all text, and paste it into the 'Paste Resume Text' box below!");
+        const mockParsedProfile: UserProfile = {
+          name: file.name.split('.')[0].replace(/[-_]/g, ' '),
+          email: 'uploaded.candidate@example.com',
+          phone: '+1 (555) 019-9988',
+          degree: 'B.Tech',
+          branch: 'Computer Science',
+          graduationYear: 2026,
+          cgpa: '8.5/10',
+          skills: ['React', 'JavaScript', 'TypeScript', 'Node.js', 'SQL', 'Git', 'CSS'],
+          programmingLanguages: ['TypeScript', 'JavaScript', 'Python'],
+          technicalTools: ['Git', 'VS Code', 'Docker'],
+          projects: [
+            {
+              title: 'Uploaded Source Project',
+              description: 'Analyzed dataset flows and created automated validation scripts to test microservice load distribution.',
+              skillsUsed: ['React', 'Node.js']
+            }
+          ],
+          certifications: ['AWS Cloud Practitioner'],
+          internships: [],
+          experience: [],
+          languages: ['English'],
+          achievements: ['Uploaded Resume parsed successfully']
+        };
+        simulateParsing(mockParsedProfile);
+      }
     }
   };
 
@@ -177,28 +187,38 @@ export const ResumeUpload: React.FC<ResumeUploadProps> = ({ userProfile, setUser
               type="file" 
               id="file-upload" 
               className="hidden" 
-              accept=".pdf,.docx" 
+              accept=".pdf,.docx,.txt" 
               onChange={(e) => {
                 if (e.target.files && e.target.files[0]) {
                   const file = e.target.files[0];
-                  simulateParsing({
-                    name: file.name.split('.')[0],
-                    email: 'custom.upload@example.com',
-                    phone: '+1 (555) 901-2911',
-                    degree: 'B.Tech',
-                    branch: 'Computer Science',
-                    graduationYear: 2026,
-                    cgpa: '8.8/10',
-                    skills: ['React', 'JavaScript', 'TypeScript', 'Tailwind CSS', 'Git'],
-                    programmingLanguages: ['TypeScript', 'JavaScript'],
-                    technicalTools: ['Git', 'VS Code'],
-                    projects: [],
-                    certifications: [],
-                    internships: [],
-                    experience: [],
-                    languages: ['English'],
-                    achievements: []
-                  });
+                  if (file.name.endsWith('.txt')) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      const parsed = parseResumeText(event.target?.result as string);
+                      simulateParsing(parsed);
+                    };
+                    reader.readAsText(file);
+                  } else {
+                    alert("Note: PDF/DOCX binary files cannot be processed fully in browser-only environments. For 100% accurate parsing, open your resume, copy all text, and paste it into the 'Paste Resume Text' box below!");
+                    simulateParsing({
+                      name: file.name.split('.')[0],
+                      email: 'custom.upload@example.com',
+                      phone: '+1 (555) 901-2911',
+                      degree: 'B.Tech',
+                      branch: 'Computer Science',
+                      graduationYear: 2026,
+                      cgpa: '8.8/10',
+                      skills: ['React', 'JavaScript', 'TypeScript', 'Tailwind CSS', 'Git'],
+                      programmingLanguages: ['TypeScript', 'JavaScript'],
+                      technicalTools: ['Git', 'VS Code'],
+                      projects: [],
+                      certifications: [],
+                      internships: [],
+                      experience: [],
+                      languages: ['English'],
+                      achievements: []
+                    });
+                  }
                 }
               }}
             />
