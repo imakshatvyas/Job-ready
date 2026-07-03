@@ -33,9 +33,11 @@ export interface SocialHiringPost {
   postedTime: string;
   contactEmail?: string;
   applyLink?: string;
+  type: 'Referral' | 'Hiring' | 'Internship' | 'Graduate Program';
 }
 
 export const mockJobs: Job[] = [
+  // Existing standard jobs
   {
     id: 'google-swe-1',
     company: 'Google',
@@ -52,7 +54,7 @@ export const mockJobs: Job[] = [
     experienceRequired: 0,
     skillsRequired: ['React', 'TypeScript', 'JavaScript', 'HTML', 'CSS', 'Algorithms', 'Data Structures'],
     preferredSkills: ['Next.js', 'Web Performance Optimization', 'Node.js', 'Figma'],
-    postingDate: '2026-07-02',
+    postingDate: '2026-07-04', // Today
     deadline: '2026-08-15',
     employmentType: 'Full-time',
     description: 'As a Software Engineer in the Front End team, you will build user interfaces that empower users around the globe. You will work closely with designers, product managers, and other engineers to deliver high-quality, performant web applications using modern web standards.',
@@ -70,13 +72,13 @@ export const mockJobs: Job[] = [
     atsPlatform: 'Workday',
     location: 'Bengaluru, India',
     workMode: 'On-site',
-    salary: '₹14,00,000 - ₹18,00,000',
+    salary: '₹14,0,000 - ₹18,0,000',
     requiredDegree: ["B.Tech", "B.E.", "M.Tech", "M.S."],
     acceptedBranches: ['Electronics & Communication', 'Electrical Engineering', 'Instrumentation', 'Computer Science'],
     experienceRequired: 0,
     skillsRequired: ['C++', 'Verilog', 'VLSI', 'Python', 'Microcontrollers', 'SystemVerilog'],
     preferredSkills: ['MATLAB', 'RTOS', 'Git'],
-    postingDate: '2026-07-03',
+    postingDate: '2026-07-04', // Today
     deadline: '2026-07-30',
     employmentType: 'Full-time',
     description: 'NVIDIA is hiring Graduate Engineer Trainees for our Silicon Validation team in Bangalore. You will participate in silicon bring-up, write test sequences in SystemVerilog, automate diagnostics workflows using Python, and troubleshoot embedded system boards.',
@@ -92,7 +94,7 @@ export const mockJobs: Job[] = [
     jobId: 'SECURE-GET-891',
     applyUrl: 'https://careers.securemeters.com/jobs/embedded-get-mbm',
     atsPlatform: 'Company Career Page',
-    location: 'Udaipur, Rajasthan',
+    location: 'Udaipur, India',
     workMode: 'On-site',
     salary: '₹6,50,000 - ₹8,00,000',
     requiredDegree: ["B.Tech", "B.E.", "B.S."],
@@ -100,10 +102,10 @@ export const mockJobs: Job[] = [
     experienceRequired: 0,
     skillsRequired: ['C', 'Microcontrollers', 'Power Electronics', 'AutoCAD', 'Control Systems'],
     preferredSkills: ['MATLAB', 'Arduino', 'LTSpice'],
-    postingDate: '2026-07-04',
+    postingDate: '2026-07-03',
     deadline: '2026-08-01',
     employmentType: 'Full-time',
-    description: 'Secure Meters is visiting MBM University and premier engineering campuses. We are seeking Embedded GETs to design industrial energy meters. You will configure microcontrollers, write optimized C firmware, and check power electronics layouts.',
+    description: 'Secure Meters is visiting premier engineering campuses. We are seeking Embedded GETs to design industrial energy meters. You will configure microcontrollers, write optimized C firmware, and check power electronics layouts.',
     companyOverview: 'Secure Meters is a leading multinational smart energy solution provider headquartered in India.',
     hiringTrends: 'Primary campus recruiter for core branches in Rajasthan engineering institutions.',
     visaRequirement: 'Local Auth Required'
@@ -124,8 +126,8 @@ export const mockJobs: Job[] = [
     experienceRequired: 0,
     skillsRequired: ['PLC Programming', 'SCADA', 'AutoCAD', 'Control Systems', 'Electrical Engineering'],
     preferredSkills: ['MATLAB', 'Modbus', 'LabVIEW'],
-    postingDate: '2026-07-03',
-    deadline: '2026-07-28',
+    postingDate: '2026-07-02',
+    deadline: '2026-07-07', // Closing soon!
     employmentType: 'Full-time',
     description: 'Alstom is looking for young engineers to join our transport automation unit. You will collaborate on PLC systems configuration, draw wiring layouts in AutoCAD, and support SCADA telemetry integration for metro systems.',
     companyOverview: 'Alstom is a global leader in sustainable mobility and rail transport systems.',
@@ -148,7 +150,7 @@ export const mockJobs: Job[] = [
     experienceRequired: 1,
     skillsRequired: ['C', 'Embedded Systems', 'RTOS', 'Microcontrollers', 'Linux', 'Git'],
     preferredSkills: ['C++', 'Python', 'Oscilloscopes', 'CAN Bus'],
-    postingDate: '2026-07-02',
+    postingDate: '2026-07-04', // Today
     deadline: '2026-08-20',
     employmentType: 'Full-time',
     description: 'Work on Qualcomm Snapdragon firmware layers. You will debug low-level hardware modules, configure RTOS kernel tasks, and program interfaces in C for Wi-Fi and Bluetooth controllers.',
@@ -196,12 +198,108 @@ export const mockJobs: Job[] = [
     experienceRequired: 0,
     skillsRequired: ['AutoCAD', 'Control Systems', 'Power Electronics', 'Electrical Engineering', 'Git'],
     preferredSkills: ['PLC Programming', 'MATLAB', 'System Engineering'],
-    postingDate: '2026-07-02',
+    postingDate: '2026-07-03',
     deadline: '2026-07-25',
     employmentType: 'Full-time',
     description: 'L&T is recruiting EEE and ECE GETs. You will support grid layouts, design substation line diagrams using AutoCAD, and monitor PLC controller networks.',
     companyOverview: 'Larsen & Toubro is an Indian multinational conglomerate engaged in EPC projects, manufacturing, and services.',
     hiringTrends: 'A major core recruiter for GET positions across premier state engineering universities.',
+    visaRequirement: 'Local Auth Required'
+  },
+  {
+    id: 'siemens-control-systems',
+    company: 'Siemens',
+    companyLogo: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=128&auto=format&fit=crop&q=80',
+    title: 'Graduate Control Engineer',
+    jobId: 'SIE-GET-2026',
+    applyUrl: 'https://jobs.siemens.com/jobs/graduate-control-engineer',
+    atsPlatform: 'Greenhouse',
+    location: 'Munich, Germany',
+    workMode: 'Hybrid',
+    salary: '€50,000 - €58,000',
+    requiredDegree: ["B.S.", "B.Tech", "B.E."],
+    acceptedBranches: ['Electrical Engineering', 'Instrumentation', 'Robotics'],
+    experienceRequired: 0,
+    skillsRequired: ['PLC Programming', 'SCADA', 'Control Systems', 'Linux', 'Python'],
+    preferredSkills: ['C++', 'Docker', 'Automation'],
+    postingDate: '2026-07-04', // Today
+    deadline: '2026-08-30',
+    employmentType: 'Full-time',
+    description: 'Siemens Industrial Automation division is seeking entry-level Engineers to deploy digital twin modeling and configure PLC networks for automation assembly lines.',
+    companyOverview: 'Siemens is a technology company focused on industry, infrastructure, transport, and healthcare.',
+    hiringTrends: 'Expanding smart factory programs globally, focusing on digital controls.',
+    visaRequirement: 'Sponsorship Available'
+  },
+  {
+    id: 'intel-embedded-val',
+    company: 'Intel',
+    companyLogo: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=128&auto=format&fit=crop&q=80',
+    title: 'Silicon Validation Intern',
+    jobId: 'INTC-VAL-902',
+    applyUrl: 'https://intel.addity.com/jobs/silicon-validation-intern',
+    atsPlatform: 'Greenhouse',
+    location: 'Hillsboro, OR',
+    workMode: 'On-site',
+    salary: '$38 - $48 / hour',
+    requiredDegree: ["B.S.", "M.S.", "PhD"],
+    acceptedBranches: ['Electrical Engineering', 'Electronics & Communication', 'Computer Science'],
+    experienceRequired: 0,
+    skillsRequired: ['Python', 'C++', 'Microcontrollers', 'Embedded Systems', 'Git'],
+    preferredSkills: ['Verilog', 'Oscilloscopes', 'System Design'],
+    postingDate: '2026-07-04', // Today
+    deadline: '2026-07-15', // Closing soon!
+    employmentType: 'Internship',
+    description: 'Work on processor validation. You will write diagnostic scripts in Python, validate power-on states, and use logic analyzers to debug firmware bugs.',
+    companyOverview: 'Intel designs and manufactures microprocessors and key technologies for the cloud and smart devices.',
+    hiringTrends: 'Highly active recruiting cycles for university students in validation and emulation fields.',
+    visaRequirement: 'Local Auth Required'
+  },
+  {
+    id: 'abb-robotics-get',
+    company: 'ABB',
+    companyLogo: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=128&auto=format&fit=crop&q=80',
+    title: 'Robotics Commissioning Trainee',
+    jobId: 'ABB-ROB-112',
+    applyUrl: 'https://abb.wd3.myworkdayjobs.com/ABBCareers/robotics-trainee',
+    atsPlatform: 'Workday',
+    location: 'Zurich, Switzerland',
+    workMode: 'On-site',
+    salary: 'CHF 68,000 - CHF 75,000',
+    requiredDegree: ["B.S.", "B.Tech", "B.E."],
+    acceptedBranches: ['Electrical Engineering', 'Mechanical Engineering', 'Instrumentation'],
+    experienceRequired: 0,
+    skillsRequired: ['PLC Programming', 'SCADA', 'AutoCAD', 'Control Systems', 'C++'],
+    preferredSkills: ['ROS', 'Python', 'Industrial Automation'],
+    postingDate: '2026-07-02',
+    deadline: '2026-08-10',
+    employmentType: 'Full-time',
+    description: 'ABB Robotics is recruiting fresh engineers to configure industrial robot controllers, coordinate SCADA systems, and draw electrical diagrams in AutoCAD.',
+    companyOverview: 'ABB is a leading global technology company that energizes the transformation of society and industry.',
+    hiringTrends: 'Hiring core automation talents for European manufacturing plants.',
+    visaRequirement: 'Sponsorship Available'
+  },
+  {
+    id: 'amd-gpu-emulation',
+    company: 'AMD',
+    companyLogo: 'https://images.unsplash.com/photo-1591488320449-011701bb6704?w=128&auto=format&fit=crop&q=80',
+    title: 'Silicon Validation Engineer - Early Career',
+    jobId: 'AMD-VAL-2026',
+    applyUrl: 'https://careers.amd.com/jobs/silicon-validation-engineer',
+    atsPlatform: 'Company Career Page',
+    location: 'Austin, TX',
+    workMode: 'Hybrid',
+    salary: '$110,000 - $140,000',
+    requiredDegree: ["B.S.", "M.S."],
+    acceptedBranches: ['Electrical Engineering', 'Electronics & Communication', 'Computer Science'],
+    experienceRequired: 1,
+    skillsRequired: ['Verilog', 'C++', 'SystemVerilog', 'Python', 'Git', 'Linux'],
+    preferredSkills: ['UVM', 'System Design', 'Algorithms'],
+    postingDate: '2026-07-03',
+    deadline: '2026-08-30',
+    employmentType: 'Full-time',
+    description: 'Work on GPU silicon validation and validation automation scripts using Python and SystemVerilog.',
+    companyOverview: 'AMD designs high-performance graphics and computing processors.',
+    hiringTrends: 'Active validation team scaling in high-performance computing centers.',
     visaRequirement: 'Local Auth Required'
   }
 ];
@@ -215,7 +313,8 @@ export const mockSocialHiringPosts: SocialHiringPost[] = [
     company: 'Secure Meters',
     content: 'We are hiring GETs for our Udaipur R&D center! Looking for EEE and ECE fresh graduates with basic familiarity in C firmware, microcontrollers, and AutoCAD schematic layout. If you are looking to build a career in smart grid and energy metering, send your resume to pranav.sharma@securemeters.com with subject "GET Embedded Udaipur".',
     postedTime: '2 hours ago',
-    contactEmail: 'pranav.sharma@securemeters.com'
+    contactEmail: 'pranav.sharma@securemeters.com',
+    type: 'Graduate Program'
   },
   {
     id: 'sp-2',
@@ -225,7 +324,8 @@ export const mockSocialHiringPosts: SocialHiringPost[] = [
     company: 'Siemens Energy',
     content: 'Hey early-career engineers! My team at Siemens Energy is looking for Junior Control Systems Developers (0-1y experience). Location: Erlangen, Germany. Skills: PLC Programming, SCADA networks, and basic Python automation scripts. Visa sponsorship is available for outstanding candidates. Drop your portfolio / CV to elena.rostova@siemens-energy.com or DM directly.',
     postedTime: '5 hours ago',
-    contactEmail: 'elena.rostova@siemens-energy.com'
+    contactEmail: 'elena.rostova@siemens-energy.com',
+    type: 'Hiring'
   },
   {
     id: 'sp-3',
@@ -235,6 +335,18 @@ export const mockSocialHiringPosts: SocialHiringPost[] = [
     company: 'EmbeddedSystems Lab',
     content: 'We are a fast-growing smart-home automation startup in Pune! Hiring EEE/ECE Interns for 6 months. Requirements: Familiarity with Arduino platforms, basic soldering, reading circuit schematics, and clean C/C++ coding skills. High performance will lead to a full-time offer. Apply via rajesh@embedsystemslab.co.in.',
     postedTime: '1 day ago',
-    contactEmail: 'rajesh@embedsystemslab.co.in'
+    contactEmail: 'rajesh@embedsystemslab.co.in',
+    type: 'Internship'
+  },
+  {
+    id: 'sp-4',
+    recruiterName: 'Amit Verma',
+    recruiterRole: 'Staff Software Architect at NVIDIA',
+    recruiterAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=128&auto=format&fit=crop&q=80',
+    company: 'NVIDIA',
+    content: 'NVIDIA Hardware Validation group is seeking referrals! If you are a 2026/2025 grad with strong foundation in Verilog, VLSI design, C++ and python scripting, email your resume to amit.verma.referrals@nvidia.com. Please include a 3-sentence summary of your best microcontroller validation project. Subject: ECE GET Referral.',
+    postedTime: '3 days ago',
+    contactEmail: 'amit.verma.referrals@nvidia.com',
+    type: 'Referral'
   }
 ];

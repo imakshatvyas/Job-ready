@@ -3,7 +3,7 @@ import { mockJobs, mockSocialHiringPosts } from '../data/jobs';
 import type { Job } from '../data/jobs';
 import { calculateMatch, generateSuggestions } from '../services/aiEngine';
 import type { UserProfile } from '../services/aiEngine';
-import { Search, MapPin, Building, ExternalLink, Bookmark, ShieldAlert, Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
+import { Search, MapPin, Building, ExternalLink, Bookmark, ShieldAlert, Sparkles, AlertCircle, CheckCircle, ChevronLeft, ChevronRight, Mail, Share2 } from 'lucide-react';
 
 interface JobExplorerProps {
   userProfile: UserProfile | null;
@@ -30,6 +30,11 @@ export const JobExplorer: React.FC<JobExplorerProps> = ({
   const [filterVisa, setFilterVisa] = useState('');
   const [minMatch, setMinMatch] = useState(0);
   const [activeSubTab, setActiveSubTab] = useState<'listings' | 'social'>('listings');
+  const [socialFilter, setSocialFilter] = useState('');
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   // Compute matches
   const jobItems = mockJobs.map(job => {
@@ -51,11 +56,19 @@ export const JobExplorer: React.FC<JobExplorerProps> = ({
   });
 
   // Filter social posts
-  const filteredSocial = mockSocialHiringPosts.filter(post => 
-    post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    post.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    post.recruiterName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredSocial = mockSocialHiringPosts.filter(post => {
+    const matchesSearch = post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          post.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          post.recruiterName.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = socialFilter ? post.type === socialFilter : true;
+    return matchesSearch && matchesType;
+  });
+
+  // Paginated jobs calculation
+  const indexOfLastJob = currentPage * itemsPerPage;
+  const indexOfFirstJob = indexOfLastJob - itemsPerPage;
+  const currentJobs = filteredJobs.slice(indexOfFirstJob, indexOfLastJob);
+  const totalPages = Math.ceil(filteredJobs.length / itemsPerPage);
 
   const activeJobItem = selectedJob ? jobItems.find(ji => ji.job.id === selectedJob.id) : null;
   const activeMatch = activeJobItem ? activeJobItem.match : null;
@@ -70,7 +83,23 @@ export const JobExplorer: React.FC<JobExplorerProps> = ({
     window.open(job.applyUrl, '_blank');
   };
 
-  // Estimate competitiveness based on match score
+  // Compose pre-filled email client (mailto:)
+  const handleEmailResume = (post: any) => {
+    const subject = encodeURIComponent(`Application for GET / Early Career Role - ${post.company}`);
+    const body = encodeURIComponent(
+      `Dear ${post.recruiterName},\n\n` +
+      `I saw your recent LinkedIn post regarding the open hiring cycle at ${post.company} and would love to be considered.\n\n` +
+      `My Profile:\n` +
+      `- Degree: ${userProfile?.degree || 'B.Tech'}\n` +
+      `- Specialization: ${userProfile?.branch || 'Engineering'}\n` +
+      `- Key Skills: ${(userProfile?.skills || []).slice(0, 5).join(', ')}\n\n` +
+      `Please find my credentials and resume details attached. Looking forward to your response!\n\n` +
+      `Best regards,\n` +
+      `${userProfile?.name || 'Applicant'}`
+    );
+    window.location.href = `mailto:${post.contactEmail}?subject=${subject}&body=${body}`;
+  };
+
   const getCompetitiveness = (score: number) => {
     if (score >= 80) return { label: 'High Competitiveness', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' };
     if (score >= 60) return { label: 'Moderate Competitiveness', color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' };
@@ -100,7 +129,7 @@ export const JobExplorer: React.FC<JobExplorerProps> = ({
           }`}
         >
           LinkedIn Recruiter Posts
-          <span className="text-[9px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded-full font-bold">New</span>
+          <span className="text-[9px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded-full font-bold">New Feed</span>
         </button>
       </div>
 
@@ -113,16 +142,19 @@ export const JobExplorer: React.FC<JobExplorerProps> = ({
               type="text"
               placeholder={activeSubTab === 'listings' ? "Search jobs by title, company, or skills (e.g. React, AutoCAD)..." : "Search social posts..."}
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1); // Reset pagination on search
+              }}
               className="w-full pl-10 pr-4 py-2.5 bg-black/20 border border-white/5 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500"
             />
           </div>
           
-          {activeSubTab === 'listings' && (
+          {activeSubTab === 'listings' ? (
             <div className="flex flex-wrap gap-2">
               <select
                 value={filterAts}
-                onChange={(e) => setFilterAts(e.target.value)}
+                onChange={(e) => { setFilterAts(e.target.value); setCurrentPage(1); }}
                 className="px-3 py-2.5 bg-black/20 border border-white/5 rounded-xl text-xs text-white focus:outline-none focus:border-violet-500"
               >
                 <option value="">All ATS Platforms</option>
@@ -135,7 +167,7 @@ export const JobExplorer: React.FC<JobExplorerProps> = ({
 
               <select
                 value={filterMode}
-                onChange={(e) => setFilterMode(e.target.value)}
+                onChange={(e) => { setFilterMode(e.target.value); setCurrentPage(1); }}
                 className="px-3 py-2.5 bg-black/20 border border-white/5 rounded-xl text-xs text-white focus:outline-none focus:border-violet-500"
               >
                 <option value="">All Modes</option>
@@ -146,12 +178,26 @@ export const JobExplorer: React.FC<JobExplorerProps> = ({
 
               <select
                 value={filterVisa}
-                onChange={(e) => setFilterVisa(e.target.value)}
+                onChange={(e) => { setFilterVisa(e.target.value); setCurrentPage(1); }}
                 className="px-3 py-2.5 bg-black/20 border border-white/5 rounded-xl text-xs text-white focus:outline-none focus:border-violet-500"
               >
                 <option value="">All Authorization</option>
                 <option value="Local Auth Required">Local Auth Required</option>
                 <option value="Sponsorship Available">Sponsorship Available</option>
+              </select>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <select
+                value={socialFilter}
+                onChange={(e) => setSocialFilter(e.target.value)}
+                className="px-3 py-2.5 bg-black/20 border border-white/5 rounded-xl text-xs text-white focus:outline-none focus:border-violet-500"
+              >
+                <option value="">All Social Types</option>
+                <option value="Referral">Referrals</option>
+                <option value="Hiring">Hiring Announcements</option>
+                <option value="Internship">Internship Offers</option>
+                <option value="Graduate Program">Graduate Schemes</option>
               </select>
             </div>
           )}
@@ -165,7 +211,7 @@ export const JobExplorer: React.FC<JobExplorerProps> = ({
               min="0" 
               max="100" 
               value={minMatch} 
-              onChange={(e) => setMinMatch(parseInt(e.target.value))}
+              onChange={(e) => { setMinMatch(parseInt(e.target.value)); setCurrentPage(1); }}
               className="w-32 accent-violet-500"
             />
             <span className="text-xs text-violet-400 font-bold">{minMatch}% Match</span>
@@ -174,7 +220,7 @@ export const JobExplorer: React.FC<JobExplorerProps> = ({
       </div>
 
       {activeSubTab === 'listings' ? (
-        /* Official Listings Split View */
+        /* Listings Split View */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Jobs List (Left) */}
           <div className={`space-y-3 ${selectedJob ? 'lg:col-span-5' : 'lg:col-span-12'}`}>
@@ -182,8 +228,8 @@ export const JobExplorer: React.FC<JobExplorerProps> = ({
               <span className="text-xs text-gray-400 font-semibold">{filteredJobs.length} Positions Found</span>
             </div>
 
-            <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
-              {filteredJobs.map(({ job, match }) => {
+            <div className="space-y-3 max-h-[550px] overflow-y-auto pr-1">
+              {currentJobs.map(({ job, match }) => {
                 const isSaved = savedJobs.includes(job.id);
                 const isSelected = selectedJob?.id === job.id;
                 
@@ -249,10 +295,31 @@ export const JobExplorer: React.FC<JobExplorerProps> = ({
 
               {filteredJobs.length === 0 && (
                 <div className="glass p-12 rounded-xl text-center text-gray-400 text-sm">
-                  No jobs matching your filters. Try adjusting your search query.
+                  No jobs matching your filters.
                 </div>
               )}
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between border-t border-white/5 pt-4 px-1 text-xs">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  className="px-3 py-1.5 bg-white/5 disabled:opacity-40 hover:bg-white/10 rounded-lg text-white font-semibold transition-all flex items-center gap-1"
+                >
+                  <ChevronLeft className="w-4 h-4" /> Prev
+                </button>
+                <span className="text-gray-400">Page {currentPage} of {totalPages}</span>
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  className="px-3 py-1.5 bg-white/5 disabled:opacity-40 hover:bg-white/10 rounded-lg text-white font-semibold transition-all flex items-center gap-1"
+                >
+                  Next <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Detailed Explanation View (Right) */}
@@ -421,15 +488,20 @@ export const JobExplorer: React.FC<JobExplorerProps> = ({
         /* LinkedIn Recruiter Social Posts List */
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredSocial.map(post => (
-            <div key={post.id} className="glass p-5 rounded-2xl border-white/5 space-y-4 flex flex-col justify-between">
+            <div key={post.id} className="glass p-5 rounded-2xl border-white/5 space-y-4 flex flex-col justify-between hover:border-white/10 transition-all duration-200">
               <div>
                 {/* Author Info */}
-                <div className="flex items-center gap-3">
-                  <img src={post.recruiterAvatar} alt={post.recruiterName} className="w-10 h-10 rounded-full object-cover" />
-                  <div>
-                    <h4 className="text-sm font-bold text-white leading-tight">{post.recruiterName}</h4>
-                    <p className="text-[10px] text-gray-400 mt-0.5">{post.recruiterRole}</p>
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-3">
+                    <img src={post.recruiterAvatar} alt={post.recruiterName} className="w-10 h-10 rounded-full object-cover" />
+                    <div>
+                      <h4 className="text-sm font-bold text-white leading-tight">{post.recruiterName}</h4>
+                      <p className="text-[9px] text-gray-400 mt-0.5">{post.recruiterRole}</p>
+                    </div>
                   </div>
+                  <span className="text-[9px] bg-white/5 text-gray-400 px-2 py-0.5 rounded-full font-bold">
+                    {post.type}
+                  </span>
                 </div>
 
                 {/* Content */}
@@ -440,12 +512,23 @@ export const JobExplorer: React.FC<JobExplorerProps> = ({
 
               {/* Action Buttons */}
               <div className="flex gap-2 border-t border-white/5 pt-3 mt-4 text-[10px]">
-                {post.contactEmail && (
-                  <a
-                    href={`mailto:${post.contactEmail}`}
-                    className="flex-1 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-bold text-center"
+                {post.contactEmail ? (
+                  <button
+                    onClick={() => handleEmailResume(post)}
+                    className="flex-1 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-bold flex items-center justify-center gap-1 transition-all"
                   >
-                    Email Resume
+                    <Mail className="w-3.5 h-3.5" />
+                    Draft Email Resume
+                  </button>
+                ) : (
+                  <a
+                    href="https://linkedin.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg font-bold flex items-center justify-center gap-1 border border-white/10 text-center"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    View Original Post
                   </a>
                 )}
                 <span className="text-gray-500 self-center px-1">

@@ -8,8 +8,7 @@ import {
   Building2, 
   Bell,
   Sparkles,
-  LogOut,
-  Compass
+  LogOut
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -35,7 +34,6 @@ export const Navigation: React.FC<NavigationProps> = ({
     { id: 'tailor', label: 'Resume Tailor', icon: Sparkles },
     { id: 'tracker', label: 'Application Tracker', icon: KanbanSquare },
     { id: 'learning', label: 'Learning Hub', icon: GraduationCap },
-    { id: 'placement', label: 'Placement Insights', icon: Compass },
     { id: 'companies', label: 'Company Pages', icon: Building2 },
   ];
 

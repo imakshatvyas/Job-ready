@@ -3,6 +3,80 @@ import { Upload, FileText, CheckCircle, RefreshCw, Sparkles, User, Mail, Phone, 
 import { userTemplates, parseResumeText } from '../services/aiEngine';
 import type { UserProfile } from '../services/aiEngine';
 
+const loadScript = (src: string): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) {
+      resolve();
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+    document.head.appendChild(script);
+  });
+};
+
+const extractTextFromFile = async (file: File): Promise<string> => {
+  if (file.name.endsWith('.txt')) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target?.result as string);
+      reader.onerror = (err) => reject(err);
+      reader.readAsText(file);
+    });
+  }
+
+  if (file.name.endsWith('.pdf')) {
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+    const pdfjsLib = (window as any)['pdfjs-dist/build/pdf'];
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const arrayBuffer = e.target?.result as ArrayBuffer;
+          const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+          let fullText = '';
+          for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map((item: any) => item.str).join(' ');
+            fullText += pageText + '\n';
+          }
+          resolve(fullText);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.onerror = (err) => reject(err);
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  if (file.name.endsWith('.docx')) {
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
+    const mammoth = (window as any).mammoth;
+
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const arrayBuffer = e.target?.result as ArrayBuffer;
+          const result = await mammoth.extractRawText({ arrayBuffer });
+          resolve(result.value);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.onerror = (err) => reject(err);
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  throw new Error("Unsupported file format. Please upload PDF, DOCX, or TXT.");
+};
 
 interface ResumeUploadProps {
   userProfile: UserProfile | null;
@@ -33,48 +107,29 @@ export const ResumeUpload: React.FC<ResumeUploadProps> = ({ userProfile, setUser
     }, 1500);
   };
 
+  const processUploadedFile = async (file: File) => {
+    setIsScanning(true);
+    try {
+      const extractedText = await extractTextFromFile(file);
+      const parsed = parseResumeText(extractedText);
+      if (parsed.name === 'Unknown Candidate') {
+        parsed.name = file.name.split('.')[0].replace(/[-_]/g, ' ');
+      }
+      setUserProfile(parsed);
+    } catch (err: any) {
+      alert(`Error parsing file: ${err.message || err}. Please try copying and pasting text directly instead.`);
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      if (file.name.endsWith('.txt')) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const parsed = parseResumeText(event.target?.result as string);
-          simulateParsing(parsed);
-        };
-        reader.readAsText(file);
-      } else {
-        alert("Note: PDF/DOCX binary files cannot be processed fully in browser-only environments. For 100% accurate parsing, open your resume, copy all text, and paste it into the 'Paste Resume Text' box below!");
-        const mockParsedProfile: UserProfile = {
-          name: file.name.split('.')[0].replace(/[-_]/g, ' '),
-          email: 'uploaded.candidate@example.com',
-          phone: '+1 (555) 019-9988',
-          degree: 'B.Tech',
-          branch: 'Computer Science',
-          graduationYear: 2026,
-          cgpa: '8.5/10',
-          skills: ['React', 'JavaScript', 'TypeScript', 'Node.js', 'SQL', 'Git', 'CSS'],
-          programmingLanguages: ['TypeScript', 'JavaScript', 'Python'],
-          technicalTools: ['Git', 'VS Code', 'Docker'],
-          projects: [
-            {
-              title: 'Uploaded Source Project',
-              description: 'Analyzed dataset flows and created automated validation scripts to test microservice load distribution.',
-              skillsUsed: ['React', 'Node.js']
-            }
-          ],
-          certifications: ['AWS Cloud Practitioner'],
-          internships: [],
-          experience: [],
-          languages: ['English'],
-          achievements: ['Uploaded Resume parsed successfully']
-        };
-        simulateParsing(mockParsedProfile);
-      }
+      processUploadedFile(e.dataTransfer.files[0]);
     }
   };
 
@@ -190,35 +245,7 @@ export const ResumeUpload: React.FC<ResumeUploadProps> = ({ userProfile, setUser
               accept=".pdf,.docx,.txt" 
               onChange={(e) => {
                 if (e.target.files && e.target.files[0]) {
-                  const file = e.target.files[0];
-                  if (file.name.endsWith('.txt')) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                      const parsed = parseResumeText(event.target?.result as string);
-                      simulateParsing(parsed);
-                    };
-                    reader.readAsText(file);
-                  } else {
-                    alert("Note: PDF/DOCX binary files cannot be processed fully in browser-only environments. For 100% accurate parsing, open your resume, copy all text, and paste it into the 'Paste Resume Text' box below!");
-                    simulateParsing({
-                      name: file.name.split('.')[0],
-                      email: 'custom.upload@example.com',
-                      phone: '+1 (555) 901-2911',
-                      degree: 'B.Tech',
-                      branch: 'Computer Science',
-                      graduationYear: 2026,
-                      cgpa: '8.8/10',
-                      skills: ['React', 'JavaScript', 'TypeScript', 'Tailwind CSS', 'Git'],
-                      programmingLanguages: ['TypeScript', 'JavaScript'],
-                      technicalTools: ['Git', 'VS Code'],
-                      projects: [],
-                      certifications: [],
-                      internships: [],
-                      experience: [],
-                      languages: ['English'],
-                      achievements: []
-                    });
-                  }
+                  processUploadedFile(e.target.files[0]);
                 }
               }}
             />
@@ -227,7 +254,7 @@ export const ResumeUpload: React.FC<ResumeUploadProps> = ({ userProfile, setUser
                 <Upload className="w-6 h-6 text-gray-400" />
               </div>
               <p className="text-sm font-semibold text-white">Drag & drop your Resume</p>
-              <p className="text-xs text-gray-400 mt-1">Supports PDF, DOCX formats</p>
+              <p className="text-xs text-gray-400 mt-1">Supports PDF, DOCX, TXT formats</p>
               <span className="mt-4 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white rounded-lg text-xs font-medium transition-all">
                 Browse Files
               </span>
@@ -424,7 +451,7 @@ export const ResumeUpload: React.FC<ResumeUploadProps> = ({ userProfile, setUser
             </div>
           ) : (
             <div className="glass rounded-2xl border-white/5 p-12 flex flex-col items-center justify-center min-h-[450px]">
-              <Upload className="w-12 h-12 text-gray-500 mb-4 animate-pulse" />
+              <FileText className="w-12 h-12 text-gray-500 mb-4 animate-pulse" />
               <h3 className="text-lg font-bold text-white">No Candidate Loaded</h3>
               <p className="text-xs text-gray-400 mt-1 text-center max-w-sm">
                 Select a quick template on the left, drop a resume, or paste raw text to view match calculations.

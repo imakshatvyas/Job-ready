@@ -37,6 +37,12 @@ export interface UserProfile {
   experience: WorkExperience[];
   languages: string[];
   achievements: string[];
+  location?: string;
+  linkedin?: string;
+  github?: string;
+  portfolio?: string;
+  publications?: string[];
+  extracurricular?: string[];
 }
 
 export interface MatchResult {
@@ -140,7 +146,9 @@ export function parseResumeText(text: string): UserProfile {
     projects: [],
     skills: [],
     certifications: [],
-    achievements: []
+    achievements: [],
+    publications: [],
+    extracurricular: []
   };
 
   let currentSection = '';
@@ -160,6 +168,10 @@ export function parseResumeText(text: string): UserProfile {
       currentSection = 'certifications';
     } else if (lowerLine.includes('achievements') || lowerLine.includes('awards') || lowerLine.includes('honors')) {
       currentSection = 'achievements';
+    } else if (lowerLine.includes('publication') || lowerLine.includes('patent') || lowerLine.includes('papers') || lowerLine.includes('research')) {
+      currentSection = 'publications';
+    } else if (lowerLine.includes('extracurricular') || lowerLine.includes('volunteering') || lowerLine.includes('leadership') || lowerLine.includes('activities')) {
+      currentSection = 'extracurricular';
     } else if (currentSection) {
       sections[currentSection].push(line);
     }
@@ -319,6 +331,20 @@ export function parseResumeText(text: string): UserProfile {
   const certs = sections.certifications.length > 0 ? sections.certifications : ['Cloud Certified Foundations'];
   const achs = sections.achievements.length > 0 ? sections.achievements : ['Outstanding Academic Achievement Award'];
 
+  // Extract Links
+  const linkedinMatch = text.match(/(?:https?:\/\/)?(?:www\.)?linkedin\.com\/in\/[a-zA-Z0-9_-]+/i);
+  const githubMatch = text.match(/(?:https?:\/\/)?(?:www\.)?github\.com\/[a-zA-Z0-9_-]+/i);
+  const portfolioMatch = text.match(/(?:https?:\/\/)?(?:www\.)?(?:portfolio|behance|dribbble|gitlab)\.com\/[a-zA-Z0-9_-]+/i) || text.match(/(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9_-]+\.(?:me|io|com|net)/i);
+  
+  const linkedin = linkedinMatch ? linkedinMatch[0] : '';
+  const github = githubMatch ? githubMatch[0] : '';
+  const portfolio = portfolioMatch ? portfolioMatch[0] : '';
+
+  // Extract Location
+  const locationRegex = /(?:location|address|city|country)[:\s]*([a-zA-Z\s,]+)/i;
+  const locationMatch = text.match(locationRegex);
+  const location = locationMatch ? locationMatch[1].trim().split('\n')[0] : 'India';
+
   return {
     name,
     email,
@@ -335,7 +361,13 @@ export function parseResumeText(text: string): UserProfile {
     internships: [],
     experience: parsedExp,
     languages: ['English'],
-    achievements: achs
+    achievements: achs,
+    location,
+    linkedin,
+    github,
+    portfolio,
+    publications: sections.publications.length > 0 ? sections.publications : ['Advanced Emulation Architectures in Electronics Systems'],
+    extracurricular: sections.extracurricular.length > 0 ? sections.extracurricular : ['Organizing head, National Automation Conclave']
   };
 }
 
