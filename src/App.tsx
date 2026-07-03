@@ -7,7 +7,6 @@ import { Tracker } from './components/Tracker';
 import { ResumeTailor } from './components/ResumeTailor';
 import { LearningHub } from './components/LearningHub';
 import { CompanyBrowser } from './components/CompanyBrowser';
-import { Onboarding } from './components/Onboarding';
 import { AuthScreen } from './components/AuthScreen';
 import { calculateMatch } from './services/aiEngine';
 import type { UserProfile } from './services/aiEngine';
@@ -15,7 +14,6 @@ import { mockJobs } from './data/jobs';
 import type { Job } from './data/jobs';
 import { X, BellRing, RefreshCw } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
-import { FirebaseService } from './services/firebaseService';
 import './App.css';
 
 interface Application {
@@ -45,7 +43,6 @@ function App() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [notifications, setNotifications] = useState<AlertNotification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [onboarded, setOnboarded] = useState<boolean>(true);
 
   // Fetch data on login session update
   useEffect(() => {
@@ -60,11 +57,6 @@ function App() {
 
       const savedApps = localStorage.getItem(`${uPrefix}_apps`);
       setApplications(savedApps ? JSON.parse(savedApps) : []);
-
-      // Load onboarded state from Firebase
-      FirebaseService.getUserData(user.uid).then(data => {
-        setOnboarded(data.onboarded);
-      });
 
       const savedNotifs = localStorage.getItem(`${uPrefix}_notifications`);
       setNotifications(savedNotifs ? JSON.parse(savedNotifs) : [
@@ -82,7 +74,6 @@ function App() {
       setSavedJobs([]);
       setApplications([]);
       setNotifications([]);
-      setOnboarded(true);
     }
   }, [user]);
 
@@ -189,12 +180,7 @@ function App() {
     });
   };
 
-  const handleOnboardingComplete = async (profile: UserProfile, preferences: any) => {
-    if (!user) return;
-    setUserProfile(profile);
-    await FirebaseService.updateUserData(user.uid, { onboarded: true, preferences });
-    setOnboarded(true);
-  };
+
 
   const markAllNotificationsRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
@@ -220,10 +206,7 @@ function App() {
     return <AuthScreen />;
   }
 
-  // Render Onboarding if not completed
-  if (!onboarded) {
-    return <Onboarding uid={user.uid} onComplete={handleOnboardingComplete} />;
-  }
+
 
   return (
     <div className="flex bg-[#070b13] min-h-screen text-gray-100 font-sans antialiased">
