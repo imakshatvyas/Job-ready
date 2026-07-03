@@ -7,8 +7,11 @@ import {
   GraduationCap, 
   Building2, 
   Bell,
-  Sparkles
+  Sparkles,
+  LogOut,
+  Compass
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 interface NavigationProps {
   activeTab: string;
@@ -23,6 +26,8 @@ export const Navigation: React.FC<NavigationProps> = ({
   notificationCount,
   setShowNotifications
 }) => {
+  const { user, logout } = useAuth();
+  
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'jobs', label: 'Explore Jobs', icon: Briefcase },
@@ -30,6 +35,7 @@ export const Navigation: React.FC<NavigationProps> = ({
     { id: 'tailor', label: 'Resume Tailor', icon: Sparkles },
     { id: 'tracker', label: 'Application Tracker', icon: KanbanSquare },
     { id: 'learning', label: 'Learning Hub', icon: GraduationCap },
+    { id: 'placement', label: 'Placement Insights', icon: Compass },
     { id: 'companies', label: 'Company Pages', icon: Building2 },
   ];
 
@@ -60,13 +66,13 @@ export const Navigation: React.FC<NavigationProps> = ({
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                   isActive 
                     ? 'bg-gradient-to-r from-violet-600/20 to-indigo-600/10 text-white border-l-4 border-violet-500 shadow-md shadow-violet-500/5'
                     : 'text-gray-400 hover:text-white hover:bg-white/5'
                 }`}
               >
-                <Icon className={`w-5 h-5 ${isActive ? 'text-violet-400' : 'text-gray-400'}`} />
+                <Icon className={`w-4.5 h-4.5 ${isActive ? 'text-violet-400' : 'text-gray-400'}`} />
                 {item.label}
               </button>
             );
@@ -96,15 +102,27 @@ export const Navigation: React.FC<NavigationProps> = ({
           </span>
         </button>
 
-        <div className="flex items-center gap-3 p-2">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-bold shadow-md shadow-emerald-500/10">
-            U
+        {user && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-3 p-2 bg-white/2 border border-white/5 rounded-xl">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-bold shadow-md shadow-emerald-500/10">
+                {user.displayName.charAt(0).toUpperCase()}
+              </div>
+              <div className="text-left flex-1 min-w-0">
+                <p className="text-xs font-semibold text-white truncate">{user.displayName}</p>
+                <p className="text-[9px] text-gray-400 truncate">{user.email}</p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => logout()}
+              className="w-full py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-semibold rounded-xl transition-all flex items-center justify-center gap-1.5"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              Sign Out
+            </button>
           </div>
-          <div className="text-left">
-            <p className="text-xs font-semibold text-white">User Profile</p>
-            <p className="text-[10px] text-gray-400">Standard Tier</p>
-          </div>
-        </div>
+        )}
       </div>
     </aside>
   );

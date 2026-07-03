@@ -7,12 +7,14 @@ import { Tracker } from './components/Tracker';
 import { ResumeTailor } from './components/ResumeTailor';
 import { LearningHub } from './components/LearningHub';
 import { CompanyBrowser } from './components/CompanyBrowser';
+import { PlacementInsights } from './components/PlacementInsights';
+import { AuthScreen } from './components/AuthScreen';
 import { calculateMatch } from './services/aiEngine';
 import type { UserProfile } from './services/aiEngine';
 import { mockJobs } from './data/jobs';
 import type { Job } from './data/jobs';
-import { X, BellRing } from 'lucide-react';
-
+import { X, BellRing, RefreshCw } from 'lucide-react';
+import { useAuth } from './context/AuthContext';
 import './App.css';
 
 interface Application {
@@ -32,46 +34,76 @@ interface AlertNotification {
 }
 
 function App() {
+  const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  
-  // LocalStorage state management
-  const [userProfile, setUserProfileState] = useState<UserProfile | null>(() => {
-    const saved = localStorage.getItem('optijob_profile');
-    return saved ? JSON.parse(saved) : null;
-  });
 
-  const [savedJobs, setSavedJobs] = useState<string[]>(() => {
-    const saved = localStorage.getItem('optijob_saved');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [applications, setApplications] = useState<Application[]>(() => {
-    const saved = localStorage.getItem('optijob_apps');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [notifications, setNotifications] = useState<AlertNotification[]>(() => {
-    const saved = localStorage.getItem('optijob_notifications');
-    return saved ? JSON.parse(saved) : [
-      {
-        id: 'welcome-alert',
-        title: 'Welcome to OptiJob AI!',
-        message: 'Load one of the quick profiles to test the AI eligibility parser instantly.',
-        type: 'info',
-        timestamp: 'Just now',
-        read: false
-      }
-    ];
-  });
-
+  // LocalStorage state management linked to user id if authenticated
+  const [userProfile, setUserProfileState] = useState<UserProfile | null>(null);
+  const [savedJobs, setSavedJobs] = useState<string[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [notifications, setNotifications] = useState<AlertNotification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  // Sync state with LocalStorage
+  // Fetch data on login session update
+  useEffect(() => {
+    if (user) {
+      const uPrefix = `optijob_${user.uid}`;
+      
+      const savedProfile = localStorage.getItem(`${uPrefix}_profile`);
+      setUserProfileState(savedProfile ? JSON.parse(savedProfile) : null);
+
+      const savedSaved = localStorage.getItem(`${uPrefix}_saved`);
+      setSavedJobs(savedSaved ? JSON.parse(savedSaved) : []);
+
+      const savedApps = localStorage.getItem(`${uPrefix}_apps`);
+      setApplications(savedApps ? JSON.parse(savedApps) : []);
+
+      const savedNotifs = localStorage.getItem(`${uPrefix}_notifications`);
+      setNotifications(savedNotifs ? JSON.parse(savedNotifs) : [
+        {
+          id: 'welcome-alert',
+          title: `Welcome, ${user.displayName}!`,
+          message: 'Load one of the quick profiles under the Resume Parser tab to run the AI eligibility scanner.',
+          type: 'info',
+          timestamp: 'Just now',
+          read: false
+        }
+      ]);
+    } else {
+      setUserProfileState(null);
+      setSavedJobs([]);
+      setApplications([]);
+      setNotifications([]);
+    }
+  }, [user]);
+
+  // Sync data with local storage on state change
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem(`optijob_${user.uid}_saved`, JSON.stringify(savedJobs));
+    }
+  }, [savedJobs, user]);
+
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem(`optijob_${user.uid}_apps`, JSON.stringify(applications));
+    }
+  }, [applications, user]);
+
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem(`optijob_${user.uid}_notifications`, JSON.stringify(notifications));
+    }
+  }, [notifications, user]);
+
   const setUserProfile = (profile: UserProfile) => {
+    if (!user) return;
     setUserProfileState(profile);
+    const uPrefix = `optijob_${user.uid}`;
+    
     if (profile) {
-      localStorage.setItem('optijob_profile', JSON.stringify(profile));
+      localStorage.setItem(`${uPrefix}_profile`, JSON.stringify(profile));
       
       // Calculate matching jobs and trigger notifications for high match scores
       const newNotifications: AlertNotification[] = [];
@@ -93,21 +125,9 @@ function App() {
         setNotifications(prev => [...newNotifications, ...prev]);
       }
     } else {
-      localStorage.removeItem('optijob_profile');
+      localStorage.removeItem(`${uPrefix}_profile`);
     }
   };
-
-  useEffect(() => {
-    localStorage.setItem('optijob_saved', JSON.stringify(savedJobs));
-  }, [savedJobs]);
-
-  useEffect(() => {
-    localStorage.setItem('optijob_apps', JSON.stringify(applications));
-  }, [applications]);
-
-  useEffect(() => {
-    localStorage.setItem('optijob_notifications', JSON.stringify(notifications));
-  }, [notifications]);
 
   // Handlers
   const toggleSaveJob = (jobId: string) => {
@@ -170,6 +190,20 @@ function App() {
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  // Render Loader if auth session is initializing
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#070b13] flex items-center justify-center">
+        <RefreshCw className="w-10 h-10 text-violet-500 animate-spin" />
+      </div>
+    );
+  }
+
+  // Render Authentication screen if signed out
+  if (!user) {
+    return <AuthScreen />;
+  }
 
   return (
     <div className="flex bg-[#070b13] min-h-screen text-gray-100 font-sans antialiased">
@@ -237,6 +271,13 @@ function App() {
           />
         )}
 
+        {activeTab === 'placement' && (
+          <PlacementInsights 
+            setActiveTab={setActiveTab}
+            setSelectedJob={setSelectedJob}
+          />
+        )}
+
         {activeTab === 'companies' && (
           <CompanyBrowser 
             setActiveTab={setActiveTab}
@@ -245,7 +286,7 @@ function App() {
         )}
       </main>
 
-      {/* Notifications Drawer (Slide-out) */}
+      {/* Notifications Drawer */}
       {showNotifications && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm">
           <div className="w-96 glass h-full p-6 flex flex-col justify-between border-l border-white/10 shadow-2xl animate-slide-in-right">
